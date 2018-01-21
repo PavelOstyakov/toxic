@@ -1,9 +1,10 @@
 import nltk
+import tqdm
 
 
 def tokenize_sentences(sentences, words_dict):
     tokenized_sentences = []
-    for sentence in sentences:
+    for sentence in tqdm.tqdm(sentences):
         tokens = nltk.tokenize.word_tokenize(sentence.decode("utf-8"))
         result = []
         for word in tokens:

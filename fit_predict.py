@@ -20,9 +20,9 @@ def main():
     parser = argparse.ArgumentParser(
         description="Recurrent neural network for identifying and classifying toxic online comments")
 
-    parser.add_argument("train-file-path")
-    parser.add_argument("test-file-path")
-    parser.add_argument("embedding-path")
+    parser.add_argument("train_file_path")
+    parser.add_argument("test_file_path")
+    parser.add_argument("embedding_path")
     parser.add_argument("--result-path", default="toxic_results")
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--sentences-length", type=int, default=500)
@@ -32,6 +32,7 @@ def main():
 
     args = parser.parse_args()
 
+    print("Loading data...")
     train_data = pd.read_csv(args.train_file_path)
     test_data = pd.read_csv(args.test_file_path)
 
@@ -39,14 +40,19 @@ def main():
     list_sentences_test = test_data["comment_text"].fillna(NAN_WORD).values
     y_train = train_data[CLASSES].values
 
+    print("Tokenizing sentences in train set...")
     tokenized_sentences_train, words_dict = tokenize_sentences(list_sentences_train, {})
+
+    print("Tokenizing sentences in test set...")
     tokenized_sentences_test, words_dict = tokenize_sentences(list_sentences_test, words_dict)
 
     words_dict[UNKNOWN_WORD] = len(words_dict)
 
+    print("Loading embeddings...")
     embedding_list, embedding_word_dict = read_embedding_list(args.embedding_path)
     embedding_size = len(embedding_list[0])
 
+    print("Preparing data...")
     embedding_list, embedding_word_dict = clear_embedding_list(embedding_list, embedding_word_dict, words_dict)
 
     embedding_word_dict[UNKNOWN_WORD] = len(embedding_word_dict)
@@ -77,8 +83,10 @@ def main():
         args.recurrent_units,
         args.dense_size)
 
+    print("Starting to train models...")
     models = train_folds(X_train, y_train, args.fold_count, args.batch_size, get_model_func)
 
+    print("Predicting results...")
     test_predicts_list = []
     for fold_id, model in enumerate(models):
         model_path = os.path.join(args.result_path, "model{0}_weights.npy".format(fold_id))
