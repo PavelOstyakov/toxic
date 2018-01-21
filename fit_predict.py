@@ -15,6 +15,8 @@ NAN_WORD = "_NAN_"
 
 CLASSES = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 
+PROBABILITIES_NORMALIZE_COEFFICIENT = 1.4
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -29,8 +31,12 @@ def main():
     parser.add_argument("--recurrent-units", type=int, default=64)
     parser.add_argument("--dropout-rate", type=float, default=0.3)
     parser.add_argument("--dense-size", type=int, default=32)
+    parser.add_argument("--fold-count", type=int, default=10)
 
     args = parser.parse_args()
+
+    if args.fold_count <= 1:
+        raise ValueError("fold-count should be more than 1")
 
     print("Loading data...")
     train_data = pd.read_csv(args.train_file_path)
@@ -86,6 +92,9 @@ def main():
     print("Starting to train models...")
     models = train_folds(X_train, y_train, args.fold_count, args.batch_size, get_model_func)
 
+    if not os.path.exists(args.result_path):
+        os.mkdir(args.result_path)
+
     print("Predicting results...")
     test_predicts_list = []
     for fold_id, model in enumerate(models):
@@ -99,6 +108,7 @@ def main():
 
     test_predicts = np.multiply(*test_predicts_list)
     test_predicts **= (1. / len(test_predicts_list))
+    test_predicts **= PROBABILITIES_NORMALIZE_COEFFICIENT
 
     test_ids = test_data["id"].values
     test_ids = test_ids.reshape((len(test_ids), 1))
