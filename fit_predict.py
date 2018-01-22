@@ -106,7 +106,10 @@ def main():
         test_predicts_list.append(test_predicts)
         np.save(test_predicts_path, test_predicts)
 
-    test_predicts = np.multiply(*test_predicts_list)
+    test_predicts = np.ones(test_predicts_list[0].shape)
+    for fold_predict in test_predicts_list:
+        test_predicts *= fold_predict
+
     test_predicts **= (1. / len(test_predicts_list))
     test_predicts **= PROBABILITIES_NORMALIZE_COEFFICIENT
 
